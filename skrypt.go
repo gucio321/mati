@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -60,5 +62,33 @@ func main() {
 	// Extract and print the content of the div
 	fmt.Println(div.Text())
 
-	fmt.Println(doc.Find("div.productFoto__main").Find("img").Attr("src"))
+	imgURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
+	if !found {
+		log.Fatal("Cannot extract imaage")
+	}
+
+	req, err = http.NewRequest("GET", imgURL, nil)
+	if err != nil {
+		log.Fatalf("unable to create request: %s", err)
+	}
+
+	req.Header.Set("User-Agent", WorkingUserAgent)
+	resp, err = client.Do(req)
+	if err != nil {
+		log.Fatalf("unable to do request: %s", err)
+	}
+
+	if err = os.Mkdir(DIR, os.ModePerm); err != nil {
+		log.Fatalf("unable to create directory: %s", err)
+	}
+
+	file, err := os.Create(filepath.Join(DIR, "image.jpg"))
+	if err != nil {
+		log.Fatalf("unable to create file: %s", err)
+	}
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		log.Fatalf("unable to copy file: %s", err)
+	}
 }

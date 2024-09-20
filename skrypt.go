@@ -59,4 +59,6 @@ func main() {
 
 	// Extract and print the content of the div
 	fmt.Println(div.Text())
+
+	fmt.Println(doc.Find("div.productFoto__main").Find("img").Attr("src"))
 }

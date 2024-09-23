@@ -49,7 +49,6 @@ func main() {
 			break
 		}
 	}
-	fmt.Println(string(output))
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(output)))
@@ -62,7 +61,17 @@ func main() {
 
 	// Extract and print the content of the div
 	fmt.Println(div.Text())
+	fmt.Println("----")
 
+	// Extract table
+	div = doc.Find("div.productDetails__wrap").Find("div.productParams").Find("div.row")
+	names := div.Find("div.productParams__name")
+	params := div.Find("div.productParams__param")
+	for i, d := range params.Nodes {
+		fmt.Printf("%s : %s\n", names.Nodes[i].FirstChild.Data, d.FirstChild.Data)
+	}
+
+	// do image magic
 	imgURLs := make([]string, 0)
 	mainURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
 	if !found {

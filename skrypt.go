@@ -60,7 +60,7 @@ func main() {
 	div := doc.Find("div.typography")
 
 	// Extract and print the content of the div
-	fmt.Println(div.Text())
+	fmt.Println(strings.Split(div.Text(), "+48 660 887 000")[0]) // remove contact info
 	fmt.Println("----")
 
 	// Extract table

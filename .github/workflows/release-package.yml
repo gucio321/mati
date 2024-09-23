@@ -18,8 +18,6 @@ jobs:
           go-version: 1.23.x
           id: go
 
-      - name: setup go packages
-        run: make setup
       - name: Build .bin and .exe package
         run: |
           go build -o mati.bin .

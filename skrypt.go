@@ -21,6 +21,17 @@ func main() {
 	flag.StringVar(&URL, "url", "", "URL to download")
 	flag.StringVar(&DIR, "dir", "", "Directory to save file")
 	flag.Parse()
+
+	if URL == "" { // fallback URL prompt
+		fmt.Print("Enter URL: ")
+		fmt.Scanln(&URL)
+	}
+
+	if DIR == "" { // fallback DIR prompt
+		fmt.Print("Enter DIR: ")
+		fmt.Scanln(&DIR)
+	}
+
 	if URL == "" || DIR == "" {
 		flag.Usage()
 		os.Exit(1)

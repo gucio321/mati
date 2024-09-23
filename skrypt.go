@@ -49,6 +49,7 @@ func main() {
 			break
 		}
 	}
+	fmt.Println(string(output))
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(output)))
@@ -62,33 +63,49 @@ func main() {
 	// Extract and print the content of the div
 	fmt.Println(div.Text())
 
-	imgURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
+	imgURLs := make([]string, 0)
+	mainURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
 	if !found {
 		log.Fatal("Cannot extract imaage")
 	}
+	imgURLs = append(imgURLs, mainURL)
 
-	req, err = http.NewRequest("GET", imgURL, nil)
-	if err != nil {
-		log.Fatalf("unable to create request: %s", err)
-	}
-
-	req.Header.Set("User-Agent", WorkingUserAgent)
-	resp, err = client.Do(req)
-	if err != nil {
-		log.Fatalf("unable to do request: %s", err)
+	imgURL := doc.Find("div.productFoto__sliderList").Find("img") //.Attr("src")
+	for _, u := range imgURL.Nodes {
+		for _, a := range u.Attr {
+			if a.Key != "src" {
+				continue
+			}
+			imgURLs = append(imgURLs, a.Val)
+		}
 	}
 
 	if err = os.Mkdir(DIR, os.ModePerm); err != nil {
 		log.Fatalf("unable to create directory: %s", err)
 	}
 
-	file, err := os.Create(filepath.Join(DIR, "image.jpg"))
-	if err != nil {
-		log.Fatalf("unable to create file: %s", err)
-	}
+	for i, url := range imgURLs {
+		req, err = http.NewRequest("GET", url, nil)
+		if err != nil {
+			log.Fatalf("unable to create request: %s", err)
+		}
 
-	_, err = io.Copy(file, resp.Body)
-	if err != nil {
-		log.Fatalf("unable to copy file: %s", err)
+		req.Header.Set("User-Agent", WorkingUserAgent)
+		resp, err = client.Do(req)
+		if err != nil {
+			log.Fatalf("unable to do request: %s", err)
+		}
+
+		file, err := os.Create(filepath.Join(DIR, fmt.Sprintf("image%d.jpg", i)))
+		if err != nil {
+			log.Fatalf("unable to create file: %s", err)
+		}
+
+		defer file.Close()
+
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			log.Fatalf("unable to copy file: %s", err)
+		}
 	}
 }

@@ -96,7 +96,8 @@ func main() {
 			if a.Key != "src" {
 				continue
 			}
-			imgURLs = append(imgURLs, a.Val)
+
+			imgURLs = append(imgURLs, strings.ReplaceAll(a.Val, "foto_add_small", "foto_add_big"))
 		}
 	}
 

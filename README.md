@@ -1,6 +1,6 @@
 ## Intro
 A simple-purpose program dedicated for parsing
-data from [halmar.pl](https://halmar.pl) website.
+data from [halmar.pl](https://halmar.pl) and [liveomeble.pl](https://liveomeble.pl) website.
 
 ## Usage
 
@@ -18,7 +18,7 @@ If you don't specify `-dir` or `-url`, the programm will prompt you for them.
 
 :warning: **DISCLAIMER** :warning:
 
-This Project is not affiliated with [halmar.pl](https://halmar.pl) in any way.
+This Project is not affiliated with [halmar.pl](https://halmar.pl) or [liveomeble.pl](https://liveomeble.pl) in any way.
 There is ABSOLUTELY NO WARRANTY, to the extent permitted by applicable law.
 
 For legal info about using the Project, see attched [LICENSE](./LICENSE) file.

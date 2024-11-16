@@ -21,6 +21,7 @@ var (
 	URL, DIR         string
 	supportClipboard bool
 	useClipboard     bool
+	liveo            bool
 )
 
 func main() {
@@ -38,6 +39,7 @@ func main() {
 	flag.StringVar(&URL, "url", "", "URL to download")
 	flag.StringVar(&DIR, "dir", "", "Directory to save file")
 	flag.BoolVar(&useClipboard, "c", false, "Use clipboard mechanism")
+	flag.BoolVar(&liveo, "liveo", false, "Use liveomeble instead of halmar")
 	flag.Parse()
 
 	// 0.3: validate given URL/DIR; fallback prompt.
@@ -94,7 +96,12 @@ func main() {
 
 	// 1.4: extract description text
 	// Find the div with the specified class
-	div := doc.Find("div.typography")
+	var div *goquery.Selection
+	if liveo {
+		div = doc.Find("div.st_read_more_box")
+	} else {
+		div = doc.Find("div.typography")
+	}
 
 	// Extract and print the content of the div
 	divStr := strings.Split(div.Text(), "+48 660 887 000")[0] // remove contact info
@@ -107,42 +114,59 @@ func main() {
 		fmt.Println(divStr)
 	}
 
-	table := bytes.NewBufferString("-----")
+	if !liveo {
+		table := bytes.NewBufferString("-----")
 
-	// Extract table
-	div = doc.Find("div.productDetails__wrap").Find("div.productParams").Find("div.row")
-	names := div.Find("div.productParams__name")
-	params := div.Find("div.productParams__param")
-	for i, d := range params.Nodes {
-		fmt.Fprintf(table, "%s : %s\n", names.Nodes[i].FirstChild.Data, d.FirstChild.Data)
-	}
+		// Extract table
+		div = doc.Find("div.productDetails__wrap").Find("div.productParams").Find("div.row")
+		names := div.Find("div.productParams__name")
+		params := div.Find("div.productParams__param")
+		for i, d := range params.Nodes {
+			fmt.Fprintf(table, "%s : %s\n", names.Nodes[i].FirstChild.Data, d.FirstChild.Data)
+		}
 
-	// 1.6: print table or paste to clipboard
-	if supportClipboard && useClipboard {
-		clipboard.Write(clipboard.FmtText, table.Bytes())
-		fmt.Print("Table copied, press enter to download images...")
-		fmt.Scanln()
-	} else {
-		fmt.Println(table.String())
+		// 1.6: print table or paste to clipboard
+		if supportClipboard && useClipboard {
+			clipboard.Write(clipboard.FmtText, table.Bytes())
+			fmt.Print("Table copied, press enter to download images...")
+			fmt.Scanln()
+		} else {
+			fmt.Println(table.String())
+		}
 	}
 
 	// do image magic
 	imgURLs := make([]string, 0)
-	mainURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
-	if !found {
-		log.Fatal("Cannot extract imaage")
-	}
 
-	imgURLs = append(imgURLs, mainURL)
+	if !liveo {
+		mainURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
+		if !found {
+			log.Fatal("Cannot extract imaage")
+		}
 
-	imgURL := doc.Find("div.productFoto__sliderList").Find("img") //.Attr("src")
-	for _, u := range imgURL.Nodes {
-		for _, a := range u.Attr {
-			if a.Key != "src" {
-				continue
+		imgURLs = append(imgURLs, mainURL)
+
+		imgURL := doc.Find("div.productFoto__sliderList").Find("img") //.Attr("src")
+		for _, u := range imgURL.Nodes {
+			for _, a := range u.Attr {
+				if a.Key != "src" {
+					continue
+				}
+
+				imgURLs = append(imgURLs, strings.ReplaceAll(a.Val, "foto_add_small", "foto_add_big"))
 			}
+		}
+	} else {
+		// imgURL := doc.Find("div.pro_gallery_thumb_box").Find("img") //.Attr("src")
+		imgURL := doc.Find("div.easyzoom--overlay").Find("img") //.Attr("src")
+		for _, u := range imgURL.Nodes {
+			for _, a := range u.Attr {
+				if a.Key != "data-src" { // kurwamać japierdole
+					continue
+				}
 
-			imgURLs = append(imgURLs, strings.ReplaceAll(a.Val, "foto_add_small", "foto_add_big"))
+				imgURLs = append(imgURLs, strings.ReplaceAll(a.Val, "foto_add_small", "foto_add_big"))
+			}
 		}
 	}
 

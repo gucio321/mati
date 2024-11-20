@@ -105,6 +105,11 @@ func main() {
 
 	// Extract and print the content of the div
 	divStr := strings.Split(div.Text(), "+48 660 887 000")[0] // remove contact info
+
+	// remove multiple \n
+	divStr = strings.Join(strings.Fields(divStr), " ")
+	divStr = strings.Join(strings.Split(divStr, "Zadzwoń i zapytaj o produkt: +48 17 58 18 000 Zapytaj o produkt drogą mailową: biuro@liveomeble.pl"), "")
+
 	// 1.5: copy description to clipboard
 	if supportClipboard && useClipboard {
 		clipboard.Write(clipboard.FmtText, []byte(divStr))

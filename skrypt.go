@@ -21,7 +21,7 @@ var (
 	URL, DIR         string
 	supportClipboard bool
 	useClipboard     bool
-	liveo            bool
+	liveo, mlmeble   bool
 )
 
 func main() {
@@ -40,6 +40,7 @@ func main() {
 	flag.StringVar(&DIR, "dir", "", "Directory to save file")
 	flag.BoolVar(&useClipboard, "c", false, "Use clipboard mechanism")
 	flag.BoolVar(&liveo, "liveo", false, "Use liveomeble instead of halmar")
+	flag.BoolVar(&mlmeble, "mlmeble", false, "Use mlmeble instead of halmar")
 	flag.Parse()
 
 	// 0.3: validate given URL/DIR; fallback prompt.
@@ -97,29 +98,41 @@ func main() {
 	// 1.4: extract description text
 	// Find the div with the specified class
 	var div *goquery.Selection
-	if liveo {
+	switch {
+	case liveo:
 		div = doc.Find("div.st_read_more_box")
-	} else {
+	case mlmeble:
+	default:
 		div = doc.Find("div.typography")
 	}
 
-	// Extract and print the content of the div
-	divStr := strings.Split(div.Text(), "+48 660 887 000")[0] // remove contact info
+	if div != nil {
+		// Extract and print the content of the div
+		divStr := div.Text()
+		switch {
+		case liveo, mlmeble:
+		default:
+			divStr = strings.Split(div.Text(), "+48 660 887 000")[0] // remove contact info
+		}
 
-	// remove multiple \n
-	divStr = strings.Join(strings.Fields(divStr), " ")
-	divStr = strings.Join(strings.Split(divStr, "Zadzwoń i zapytaj o produkt: +48 17 58 18 000 Zapytaj o produkt drogą mailową: biuro@liveomeble.pl"), "")
+		// remove multiple \n
+		divStr = strings.Join(strings.Fields(divStr), " ")
+		divStr = strings.Join(strings.Split(divStr, "Zadzwoń i zapytaj o produkt: +48 17 58 18 000 Zapytaj o produkt drogą mailową: biuro@liveomeble.pl"), "")
 
-	// 1.5: copy description to clipboard
-	if supportClipboard && useClipboard {
-		clipboard.Write(clipboard.FmtText, []byte(divStr))
-		fmt.Print("Description copied, press enter to get table...")
-		fmt.Scanln()
+		// 1.5: copy description to clipboard
+		if supportClipboard && useClipboard {
+			clipboard.Write(clipboard.FmtText, []byte(divStr))
+			fmt.Print("Description copied, press enter to get table...")
+			fmt.Scanln()
+		} else {
+			fmt.Println(divStr)
+		}
 	} else {
-		fmt.Println(divStr)
+		fmt.Println("No text should be decoded?")
 	}
 
-	if !liveo {
+	switch {
+	case !liveo:
 		table := bytes.NewBufferString("-----")
 
 		// Extract table
@@ -143,7 +156,32 @@ func main() {
 	// do image magic
 	imgURLs := make([]string, 0)
 
-	if !liveo {
+	switch {
+	case liveo:
+		// imgURL := doc.Find("div.pro_gallery_thumb_box").Find("img") //.Attr("src")
+		imgURL := doc.Find("div.easyzoom--overlay").Find("img") //.Attr("src")
+		for _, u := range imgURL.Nodes {
+			for _, a := range u.Attr {
+				if a.Key != "data-src" { // kurwamać japierdole
+					continue
+				}
+
+				imgURLs = append(imgURLs, strings.ReplaceAll(a.Val, "foto_add_small", "foto_add_big"))
+			}
+		}
+	case mlmeble:
+		// imgURL := doc.Find("div.pro_gallery_thumb_box").Find("img") //.Attr("src")
+		imgURL := doc.Find("ul.fotos").Find("img")
+		for _, u := range imgURL.Nodes {
+			for _, a := range u.Attr {
+				if a.Key != "src" { // kurwamać japierdole
+					continue
+				}
+
+				imgURLs = append(imgURLs, strings.Join(strings.Split(URL, "/")[:len(strings.Split(URL, "/"))-3], "/")+"/"+a.Val)
+			}
+		}
+	default: // halmar
 		mainURL, found := doc.Find("div.productFoto__main").Find("img").Attr("src")
 		if !found {
 			log.Fatal("Cannot extract imaage")
@@ -155,18 +193,6 @@ func main() {
 		for _, u := range imgURL.Nodes {
 			for _, a := range u.Attr {
 				if a.Key != "src" {
-					continue
-				}
-
-				imgURLs = append(imgURLs, strings.ReplaceAll(a.Val, "foto_add_small", "foto_add_big"))
-			}
-		}
-	} else {
-		// imgURL := doc.Find("div.pro_gallery_thumb_box").Find("img") //.Attr("src")
-		imgURL := doc.Find("div.easyzoom--overlay").Find("img") //.Attr("src")
-		for _, u := range imgURL.Nodes {
-			for _, a := range u.Attr {
-				if a.Key != "data-src" { // kurwamać japierdole
 					continue
 				}
 

@@ -23,7 +23,7 @@ jobs:
           go build -v -o mati.bin .
           GOOS="windows" GOARCH="amd64" go build -v -o mati.exe .
 
-      - uses: "softprops/action-gh-release@v1"
+      - uses: "softprops/action-gh-release@v2"
         with:
           files: |
             mati.bin

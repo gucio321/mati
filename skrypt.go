@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"net/http"
@@ -15,7 +18,10 @@ import (
 	"golang.design/x/clipboard"
 )
 
-const WorkingUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+const (
+	WorkingUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+	newFileMode      = 0644
+)
 
 var (
 	URL, DIR         string
@@ -230,16 +236,18 @@ func main() {
 			fmt.Printf("Image %d copied to clipboard, prese Enter for next...", i)
 			fmt.Scanln()
 		} else {
-			file, err := os.Create(filepath.Join(DIR, fmt.Sprintf("image%d.jpg", i)))
+			data, err := io.ReadAll(resp.Body)
 			if err != nil {
-				log.Fatalf("unable to create file: %s", err)
+				log.Fatalf("unable to read image data: %s", err)
 			}
 
-			defer file.Close()
-
-			_, err = io.Copy(file, resp.Body)
+			_, format, err := image.Decode(bytes.NewReader(data))
 			if err != nil {
-				log.Fatalf("unable to copy file: %s", err)
+				log.Fatalf("unable to decode image: %s", err)
+			}
+
+			if err := os.WriteFile(filepath.Join(DIR, fmt.Sprintf("image%d.%s", i, format)), data, newFileMode); err != nil {
+				log.Fatalf("unable to create file: %s", err)
 			}
 		}
 	}

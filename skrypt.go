@@ -30,6 +30,18 @@ var (
 	liveo, mlmeble   bool
 )
 
+func formatExtensionTable(in string) (out string) {
+	table := map[string]string{
+		"jpeg": "jpg",
+	}
+
+	if out, ok := table[in]; ok {
+		return out
+	}
+
+	return in
+}
+
 func main() {
 	// 0: initialization
 	// 0.1: check if clipboard is supported
@@ -246,7 +258,7 @@ func main() {
 				log.Fatalf("unable to decode image: %s", err)
 			}
 
-			if err := os.WriteFile(filepath.Join(DIR, fmt.Sprintf("image%d.%s", i, format)), data, newFileMode); err != nil {
+			if err := os.WriteFile(filepath.Join(DIR, fmt.Sprintf("image%d.%s", i, formatExtensionTable(format))), data, newFileMode); err != nil {
 				log.Fatalf("unable to create file: %s", err)
 			}
 		}

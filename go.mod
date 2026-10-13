@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
-	golang.design/x/clipboard v0.9.0
+	golang.design/x/clipboard v0.11.0
 )
 
 require (
